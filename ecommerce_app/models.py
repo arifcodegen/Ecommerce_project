@@ -29,6 +29,9 @@ class Product(models.Model):
     price = models.BinaryField()  # Store encrypted data
     category = models.ForeignKey(Category, on_delete=models.CASCADE)
 
+    def __str__(self):
+        return self.name
+
     def set_price(self, raw_price):
         self.price = cipher.encrypt(str(raw_price).encode())
 
