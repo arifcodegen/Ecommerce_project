@@ -1,15 +1,19 @@
 from django.db import models
+from cryptography.fernet import InvalidToken
 from cryptography.fernet import Fernet
 from django.conf import settings
 import base64
 import os
 
 # Generate a key (in a real application, store this securely)
-def generate_key():
-    return base64.urlsafe_b64encode(os.urandom(32))
+def load_key():
+    """Load the encryption key from a file."""
+    key_path = os.path.join(settings.BASE_DIR, 'encryption_key.key')
+    with open(key_path, 'rb') as key_file:
+        return key_file.read()
 
 # Create Fernet instance
-key = generate_key()
+key = load_key()
 cipher = Fernet(key)
 
 class Category(models.Model):
@@ -29,4 +33,8 @@ class Product(models.Model):
         self.price = cipher.encrypt(str(raw_price).encode())
 
     def get_price(self):
-        return float(cipher.decrypt(self.price).decode())
+        try:
+            return float(cipher.decrypt(self.price).decode())
+        except InvalidToken as e:
+            print(f"Decryption failed for product {self.name}: {e}")
+            return None
